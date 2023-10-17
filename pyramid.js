@@ -1,12 +1,19 @@
+// javascript strict mode
 "use strict";
 
+// canvas setting
 var canvas;
 var gl;
 
+// graphic setting
 var points = [];
 var colors = [];
-var NumVertices = 18;
 
+// graphic render
+var thetaLoc;
+var theta = [0, 0, 0];
+
+// graphic rotate
 var speed = 5;
 var direction = true;
 var axis = 0;
@@ -14,26 +21,25 @@ var xAxis = 0;
 var yAxis = 1;
 var zAxis = 2;
 
-var theta = [0, 0, 0];
-var thetaLoc;
-
 window.onload = function init() {
+    // canvas setting
     canvas = document.getElementById("gl-canvas");
-
     gl = WebGLUtils.setupWebGL(canvas);
     if (!gl) { alert("WebGL isn't available"); }
 
+    // pyramid setting
     colorPyramid();
 
+    // configure webgl
     gl.viewport(0, 0, canvas.width, canvas.height);
     gl.clearColor(1.0, 1.0, 1.0, 1.0);
-
     gl.enable(gl.DEPTH_TEST);
 
-    // Load shaders and initialize attribute buffers
+    // load shaders and initialize attribute buffers
     var program = initShaders(gl, "vertex-shader", "fragment-shader");
     gl.useProgram(program);
 
+    // load the color data into the gpu
     var cBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, flatten(colors), gl.STATIC_DRAW);
@@ -42,17 +48,20 @@ window.onload = function init() {
     gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vColor);
 
+    // load the vertex data into the gpu
     var vBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, flatten(points), gl.STATIC_DRAW);
 
+    // associate out shader variables with our data buffer
     var vPosition = gl.getAttribLocation(program, "vPosition");
     gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vPosition);
 
+    // load the uniform data into the gpu
     thetaLoc = gl.getUniformLocation(program, "theta");
 
-    // Event listeners for buttons
+    // event listeners for buttons, keyboard
     document.getElementById("slider").onchange = function (event) {
         speed = 10 - event.target.value;
     };
@@ -73,7 +82,6 @@ window.onload = function init() {
         axis = zAxis;
     };
 
-    // Event listeners for keyboard
     window.onkeydown = function (event) {
         var key = String.fromCharCode(event.keyCode);
         switch (key) {
@@ -103,10 +111,12 @@ window.onload = function init() {
         }
     };
 
+    // render
     render();
 }
 
 function colorPyramid() {
+    // triangle, square setting
     rectangle(1, 2, 4, 3, 0);
     rectangle(0, 1, 2, -1, 1);
     rectangle(0, 2, 4, -1, 2);
@@ -115,7 +125,7 @@ function colorPyramid() {
 }
 
 function rectangle(x1, x2, x3, x4, color) {
-    // Pyramid vertices
+    // pyramid vertices
     var vertices = [
         vec4(0, 0.5, 0, 1.0),
         vec4(0.5, -0.5, 0.5, 1.0),
@@ -135,7 +145,7 @@ function rectangle(x1, x2, x3, x4, color) {
         [0.0, 0.0, 0.0, 1.0],  // black
     ];
 
-    // 네 번째 정점을 사용하면 사각형, 사용하지 않으면 삼각형 정점 추가
+    // triangle&square vertex&color add
     var indices = []
     if (x4 >= 0) { indices = [x1, x2, x3, x1, x3, x4]; }
     else { indices = [x1, x2, x3]; }
@@ -147,12 +157,16 @@ function rectangle(x1, x2, x3, x4, color) {
 }
 
 function render() {
+    // canvas clear
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
+    // uniform setting
     theta[axis] += (direction ? speed : -speed);
     gl.uniform3fv(thetaLoc, theta);
 
-    gl.drawArrays(gl.TRIANGLES, 0, NumVertices);
+    // draw rectangle
+    gl.drawArrays(gl.TRIANGLES, 0, 18);
 
+    // render rectangle
     requestAnimFrame(render);
 }
